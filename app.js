@@ -1,6 +1,6 @@
 const PLACE = {
   name: "Чешмели",
-  version: "3.0",
+  version: "3.5",
   latitude: 36.677778,
   longitude: 34.438611,
   shoreFacingDegrees: 131,
@@ -447,7 +447,7 @@ function renderForecast() {
     now.europeanAqi == null
       ? "Данные воздуха сейчас недоступны."
       : `Главные частицы: PM2.5 ${Math.round(now.pm25 ?? 0)} и PM10 ${Math.round(now.pm10 ?? 0)} мкг/м³.`;
-  el.waveScore.textContent = wave.score;
+  el.waveScore.textContent = `${wave.score}/100`;
   el.waveScore.style.color = wave.score >= 76 ? "#62e39a" : wave.score >= 52 ? "#ffd45a" : "#70c7ff";
   el.waveTitle.textContent = wave.title;
   el.waveSummary.textContent = wave.summary;
@@ -499,13 +499,13 @@ function renderForecast() {
     ["Высота", `${now.waveHeight.toFixed(1)} м`, wave.height.text, wave.height.color],
     ["Период", `${now.wavePeriod.toFixed(0)} с`, now.wavePeriod >= 6 ? "энергичнее" : "короткий", "#70c7ff"],
     ["Направление", degreesToCompass(now.waveDirection), "откуда волна", "#69f0e3"],
-    ["Дети", wave.child.text, "", wave.child.color],
+    ["Дети", "", "", wave.child.color],
   ]
     .map(
       ([name, value, note, color]) => `
         <div>
           <span>${name}</span>
-          <strong style="color: ${color}">${value}</strong>
+          ${value ? `<strong style="color: ${color}">${value}</strong>` : ""}
           ${note ? `<small>${note}</small>` : ""}
         </div>
       `

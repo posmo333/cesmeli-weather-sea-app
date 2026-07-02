@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Чешмели Sea Weather 3.0</title>
+    <title>Чешмели Sea Weather 3.5</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -17,7 +17,7 @@
         </div>
 
         <div class="place-block">
-          <p>Мерсин · Sea Weather 3.0</p>
+          <p>Мерсин · Sea Weather 3.5</p>
           <h1>Чешмели</h1>
           <div id="temperatureNow" class="temperature">--</div>
           <p id="conditionNow" class="condition">Загрузка</p>
@@ -135,9 +135,9 @@
             <h2>Волны</h2>
           </div>
           <div class="wave-topline">
-            <div>
+            <div class="score-tile">
+              <small>Индекс волн</small>
               <span id="waveScore">--</span>
-              <small>условия</small>
             </div>
             <div>
               <h3 id="waveTitle">Загрузка волны</h3>
@@ -153,9 +153,9 @@
             <h2>Загрязнение воздуха</h2>
           </div>
           <div class="air-topline">
-            <div>
-              <span id="airScore">--</span>
+            <div class="score-tile">
               <small>AQI</small>
+              <span id="airScore">--</span>
             </div>
             <div>
               <h3 id="airTitle">Загрузка воздуха</h3>

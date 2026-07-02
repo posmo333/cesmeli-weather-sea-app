@@ -629,20 +629,13 @@ h1 {
   background: var(--cyan);
 }
 
-.air-topline {
-  display: grid;
-  grid-template-columns: 150px minmax(0, 1fr);
-  gap: 20px;
-  align-items: center;
-  padding: 22px 2px 16px;
-}
-
+.air-topline,
 .wave-topline {
   display: grid;
-  grid-template-columns: 122px minmax(0, 1fr);
-  gap: 16px;
-  align-items: center;
-  padding: 18px 2px 14px;
+  grid-template-columns: 128px minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+  padding: 16px 0 14px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -656,28 +649,30 @@ h1 {
   }
 }
 
-.wave-topline > div:first-child {
-  min-height: 122px;
+.score-tile {
+  min-height: 108px;
   display: grid;
-  place-items: center;
   align-content: center;
-  border-radius: 50%;
+  justify-items: start;
+  border-radius: 22px;
+  padding: 14px;
   background: rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.1);
 }
 
-.wave-topline span {
-  display: block;
-  font-size: 2.5rem;
-  font-weight: 760;
-  line-height: 1;
-}
-
-.wave-topline small {
-  margin-top: 8px;
+.score-tile small {
   color: var(--muted);
   font-size: 0.72rem;
+  font-weight: 760;
+  line-height: 1.15;
   text-transform: uppercase;
+}
+
+.score-tile span {
+  display: block;
+  margin-top: 8px;
+  font-size: 2.05rem;
+  font-weight: 760;
+  line-height: 0.95;
 }
 
 .wave-topline h3 {
@@ -721,30 +716,6 @@ h1 {
   color: #fff;
   font-size: 1.36rem;
   line-height: 1;
-}
-
-.air-topline > div:first-child {
-  min-height: 150px;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.1);
-}
-
-.air-topline span {
-  display: block;
-  font-size: 3rem;
-  font-weight: 760;
-  line-height: 1;
-}
-
-.air-topline small {
-  margin-top: 8px;
-  color: var(--muted);
-  font-size: 0.78rem;
-  text-transform: uppercase;
 }
 
 .air-topline h3 {
@@ -973,15 +944,15 @@ h1 {
   }
 
   .air-topline {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    text-align: center;
+    grid-template-columns: 116px minmax(0, 1fr);
+    gap: 10px;
+    text-align: left;
   }
 
   .wave-topline {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    text-align: center;
+    grid-template-columns: 116px minmax(0, 1fr);
+    gap: 10px;
+    text-align: left;
   }
 
   .risk-topline h3,
@@ -994,8 +965,18 @@ h1 {
   .risk-topline p,
   .air-topline p,
   .wave-topline p {
-    font-size: 0.9rem;
-    line-height: 1.36;
+    font-size: 0.86rem;
+    line-height: 1.34;
+  }
+
+  .score-tile {
+    min-height: 96px;
+    border-radius: 20px;
+    padding: 12px;
+  }
+
+  .score-tile span {
+    font-size: 1.72rem;
   }
 
   .air-metrics {
