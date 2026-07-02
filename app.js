@@ -1,6 +1,6 @@
 const PLACE = {
   name: "Чешмели",
-  version: "2.5",
+  version: "3.0",
   latitude: 36.677778,
   longitude: 34.438611,
   shoreFacingDegrees: 131,
@@ -251,7 +251,7 @@ function calculateRisk(item) {
       detail: onshoreCurrent > 0.55 ? "движется к берегу" : "уводит вдоль берега или от него",
     },
     {
-      name: "Волна",
+      name: "Волны",
       value: `${item.waveHeight.toFixed(1)} м, приходит с ${degreesToCompass(item.waveDirection)}`,
       detail: shoreWave > 0.5 ? "распространение волны поджимает к пляжу" : "умеренное влияние",
     },
@@ -529,7 +529,7 @@ function renderForecast() {
   el.currentVectorNote.textContent = driftLabel(currentLocal);
   el.currentVectorMarker.style.left = `${driftPercent(currentLocal)}%`;
 
-  renderCards(visible.slice(0, 12));
+  renderCards(visible.slice(0, 24));
   renderChart(visible);
 }
 

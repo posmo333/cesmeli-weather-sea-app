@@ -171,6 +171,9 @@ button {
 }
 
 .place-block {
+  width: 100%;
+  display: grid;
+  justify-items: center;
   text-align: center;
   text-shadow: 0 3px 18px rgba(0, 22, 60, 0.26);
   min-width: 0;
@@ -195,38 +198,49 @@ p {
 }
 
 h1 {
+  width: 100%;
   margin: 4px 0 0;
   font-size: clamp(2.6rem, 8vw, 5.8rem);
   line-height: 0.95;
   font-weight: 650;
   letter-spacing: 0;
+  text-align: center;
 }
 
 .temperature {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
   margin: 4px 0 0;
   font-size: clamp(5.8rem, 20vw, 11rem);
   line-height: 0.84;
   font-weight: 230;
   letter-spacing: 0;
+  text-align: center;
 }
 
 .condition {
+  width: 100%;
   max-width: 620px;
   margin-inline: auto;
   padding: 0 10px;
   font-size: clamp(1.05rem, 2.4vw, 1.58rem);
   font-weight: 600;
   line-height: 1.15;
+  text-align: center;
   text-wrap: balance;
 }
 
 .hero-summary {
+  width: 100%;
   max-width: 520px;
   margin: 8px auto 0;
   color: var(--soft);
   font-size: clamp(0.8rem, 2.3vw, 0.94rem);
   line-height: 1.34;
   padding: 0 10px;
+  text-align: center;
   text-wrap: balance;
 }
 
