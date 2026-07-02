@@ -845,10 +845,17 @@ h1 {
   font-size: 1rem;
 }
 
-.factor span {
+.factor span,
+.factor small {
+  display: block;
   color: var(--soft);
   font-size: 0.9rem;
   line-height: 1.38;
+}
+
+.factor small {
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.66);
 }
 
 .note-module p {

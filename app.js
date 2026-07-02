@@ -193,7 +193,7 @@ function bodyboardProfile(item) {
           ? "Кататься можно, качество зависит от серий и ветра."
           : height >= 1.5 || windSpeed >= 30
             ? "Много энергии и ветра: детям небезопасно, катание только для уверенных."
-            : "Для детей безопаснее, для катания может быть скучно."),
+            : "Мягкие условия у берега, волна слабая для активного катания."),
   };
 }
 
@@ -471,7 +471,8 @@ function renderForecast() {
       (factor) => `
         <div class="factor">
           <b>${factor.name}</b>
-          <span>${factor.value}<br>${factor.detail}</span>
+          <span>${factor.value}</span>
+          <small>${factor.detail}</small>
         </div>
       `
     )
