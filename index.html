@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Чешмели Sea Weather 2.5</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="weather-hero" aria-label="Текущая погода">
+        <div class="top-bar">
+          <button id="refreshButton" class="icon-button" type="button" title="Обновить прогноз">
+            ↻
+          </button>
+          <span id="updatedAt">Загрузка...</span>
+        </div>
+
+        <div class="place-block">
+          <p>Мерсин · Sea Weather 2.5</p>
+          <h1>Чешмели</h1>
+          <div id="temperatureNow" class="temperature">--</div>
+          <p id="conditionNow" class="condition">Загрузка</p>
+          <p id="heroSummary" class="hero-summary">
+            Погода, море и риск мусора у пляжа.
+          </p>
+        </div>
+
+        <div class="hero-strip" aria-label="Краткие показатели">
+          <div>
+            <span>Ветер</span>
+            <strong id="windNow">--</strong>
+          </div>
+          <div>
+            <span>Волна</span>
+            <strong id="waveNow">--</strong>
+          </div>
+          <div>
+            <span>Вода</span>
+            <strong id="waterNow">--</strong>
+          </div>
+          <div>
+            <span>УФ</span>
+            <strong id="uvNow">--</strong>
+          </div>
+          <div>
+            <span>Мусор</span>
+            <strong id="riskNow">--</strong>
+          </div>
+          <div>
+            <span>Воздух</span>
+            <strong id="airNow">--</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="module hourly-module">
+        <div class="module-title">
+          <span>⌚</span>
+          <h2>Почасовой прогноз</h2>
+        </div>
+        <div id="forecastList" class="hourly-scroll"></div>
+      </section>
+
+      <section class="dashboard">
+        <article class="module risk-module">
+          <div class="module-title">
+            <span>≋</span>
+            <h2>Риск мусора у берега</h2>
+          </div>
+          <div class="risk-topline">
+            <div class="gauge" aria-hidden="true">
+              <div class="gauge-center">
+                <span id="riskScore">--</span>
+                <small>из 100</small>
+              </div>
+            </div>
+            <div>
+              <h3 id="riskTitle">Считаю прогноз</h3>
+              <p id="riskSummary">
+                Ветер, волна, течение и дождь.
+              </p>
+            </div>
+          </div>
+
+          <div class="period-control" role="group" aria-label="Период прогноза">
+            <button class="segment active" data-hours="24" type="button">24 ч</button>
+            <button class="segment" data-hours="48" type="button">48 ч</button>
+            <button class="segment" data-hours="72" type="button">72 ч</button>
+          </div>
+
+          <canvas id="riskChart" width="900" height="230" aria-label="График риска"></canvas>
+        </article>
+
+        <article class="module sea-module">
+          <div class="module-title">
+            <span>➤</span>
+            <h2>Ветер и течение</h2>
+          </div>
+          <div class="flow-panel" aria-label="Ветер и течение относительно пляжа">
+            <div class="flow-overview">
+              <span id="seaStatus">Считаю направление</span>
+              <strong id="seaDrift">Ветер и течение</strong>
+            </div>
+
+            <div class="vector-list">
+              <div class="vector-row vector-wind">
+                <div>
+                  <span>Ветер</span>
+                  <strong id="windVectorValue">--</strong>
+                </div>
+                <div class="vector-rail">
+                  <i id="windVectorMarker"></i>
+                </div>
+                <small id="windVectorNote">--</small>
+              </div>
+
+              <div class="vector-row vector-current">
+                <div>
+                  <span>Течение</span>
+                  <strong id="currentVectorValue">--</strong>
+                </div>
+                <div class="vector-rail">
+                  <i id="currentVectorMarker"></i>
+                </div>
+                <small id="currentVectorNote">--</small>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="module wave-module">
+          <div class="module-title">
+            <span>≈</span>
+            <h2>Волны</h2>
+          </div>
+          <div class="wave-topline">
+            <div>
+              <span id="waveScore">--</span>
+              <small>условия</small>
+            </div>
+            <div>
+              <h3 id="waveTitle">Загрузка волны</h3>
+              <p id="waveSummary">Высота, период, ветер и дети.</p>
+            </div>
+          </div>
+          <div id="waveMetrics" class="wave-metrics"></div>
+        </article>
+
+        <article class="module air-module">
+          <div class="module-title">
+            <span>◌</span>
+            <h2>Загрязнение воздуха</h2>
+          </div>
+          <div class="air-topline">
+            <div>
+              <span id="airScore">--</span>
+              <small>AQI</small>
+            </div>
+            <div>
+              <h3 id="airTitle">Загрузка воздуха</h3>
+              <p id="airSummary">PM2.5, PM10, озон и пыль.</p>
+            </div>
+          </div>
+          <div id="airMetrics" class="air-metrics"></div>
+        </article>
+      </section>
+
+      <section class="module factors-module">
+        <div class="module-title">
+          <span>ⓘ</span>
+          <h2>Почему такая оценка</h2>
+        </div>
+        <div id="riskFactors" class="factor-list"></div>
+      </section>
+
+      <section class="module science-module">
+        <div class="module-title">
+          <span>∑</span>
+          <h2>Научная логика модели</h2>
+        </div>
+        <div class="science-grid">
+          <article>
+            <b>1. Транспорт</b>
+            <p>
+              Плавающий мусор двигается не только с течением: для лёгких
+              предметов добавляется ветровой снос, примерно несколько процентов
+              от скорости ветра.
+            </p>
+          </article>
+          <article>
+            <b>2. Прижим к берегу</b>
+            <p>
+              Для этой точки берег смотрит примерно на 131° к морю, поэтому
+              дрейф к 311° считается движением к пляжу.
+            </p>
+          </article>
+          <article>
+            <b>3. Источник</b>
+            <p>
+              После дождя и при туристической нагрузке возрастает шанс свежего
+              мусора с берега, ливневого стока, ручьёв и портово-рыболовных зон.
+            </p>
+          </article>
+          <article>
+            <b>4. Ограничение</b>
+            <p>
+              Это индекс вероятности для пляжа, а не спутниковое обнаружение
+              конкретного пятна мусора. Воздух считается отдельно по модели CAMS.
+            </p>
+          </article>
+          <article>
+            <b>5. Волна</b>
+            <p>
+              Для детей рост волны быстро повышает риск сбивания с ног. Для
+              катания средняя волна и период дают энергию, но сильный ветер
+              и высокая волна снижают качество и безопасность.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="module note-module">
+        <div class="module-title">
+          <span>!</span>
+          <h2>Важно</h2>
+        </div>
+        <p>
+          Это ориентировочная оценка, а не официальный экологический прогноз.
+          Высокий риск означает, что ветер, волна или течение могут поджимать
+          плавающий мусор к пляжу. Воздух показывает модельный AQI.
+          Перед купанием всё равно лучше посмотреть воду на месте.
+        </p>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
