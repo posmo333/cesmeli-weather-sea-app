@@ -1,6 +1,6 @@
 const PLACE = {
   name: "Чешмели",
-  version: "4.9.9",
+  version: "5.0",
   latitude: 36.677778,
   longitude: 34.438611,
   shoreFacingDegrees: 131,
@@ -132,10 +132,6 @@ function localShoreVector(speed, directionToDegrees) {
     across: projectionOnDirection(vector, PLACE.shoreFacingDegrees),
     along: projectionOnDirection(vector, PLACE.shoreFacingDegrees + 90),
   };
-}
-
-function localArrowRotation(local) {
-  return Math.atan2(local.along, local.across) * (180 / Math.PI);
 }
 
 function driftLabel(local) {

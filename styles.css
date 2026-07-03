@@ -779,14 +779,6 @@ h1 {
   line-height: 1;
 }
 
-.wind-dot {
-  background: var(--blue);
-}
-
-.current-dot {
-  background: var(--cyan);
-}
-
 .factor-list {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
