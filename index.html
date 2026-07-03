@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Чешмели Sea Weather 4.9.5</title>
-    <link rel="stylesheet" href="./styles.css?v=4.9.5" />
+    <title>Чешмели Sea Weather 4.9.9</title>
+    <link rel="stylesheet" href="./styles.css?v=4.9.9" />
   </head>
   <body>
     <main class="app-shell">
@@ -17,7 +17,7 @@
         </div>
 
         <div class="place-block">
-          <p>Мерсин · Sea Weather 4.9.5</p>
+          <p>Мерсин · Sea Weather 4.9.9</p>
           <h1>Чешмели</h1>
           <div id="temperatureNow" class="temperature">--</div>
           <p id="conditionNow" class="condition">Загрузка</p>
@@ -84,9 +84,9 @@
           </div>
 
           <div class="period-control" role="group" aria-label="Период прогноза">
-            <button class="segment active" data-hours="24" type="button">24 ч</button>
+            <button class="segment active" data-hours="12" type="button">12 ч</button>
+            <button class="segment" data-hours="24" type="button">24 ч</button>
             <button class="segment" data-hours="48" type="button">48 ч</button>
-            <button class="segment" data-hours="72" type="button">72 ч</button>
           </div>
 
           <canvas id="riskChart" width="900" height="230" aria-label="График риска"></canvas>
@@ -305,6 +305,6 @@
       </form>
     </dialog>
 
-    <script src="./app.js?v=4.9.5"></script>
+    <script src="./app.js?v=4.9.9"></script>
   </body>
 </html>

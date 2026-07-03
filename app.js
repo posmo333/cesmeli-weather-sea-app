@@ -1,6 +1,6 @@
 const PLACE = {
   name: "Чешмели",
-  version: "4.9.5",
+  version: "4.9.9",
   latitude: 36.677778,
   longitude: 34.438611,
   shoreFacingDegrees: 131,
@@ -14,7 +14,7 @@ const TELEGRAM_TARGET = {
 PLACE.onshoreDirection = (PLACE.shoreFacingDegrees + 180) % 360;
 
 const state = {
-  hours: 24,
+  hours: 12,
   forecast: [],
   currentItem: null,
   currentLabel: null,
@@ -953,7 +953,7 @@ function renderForecast() {
   el.currentVectorNote.textContent = driftLabel(currentLocal);
   el.currentVectorMarker.style.left = `${driftPercent(currentLocal)}%`;
 
-  renderCards(visible.slice(0, 24));
+  renderCards(state.forecast.slice(0, 24));
   renderChart(visible);
 }
 
