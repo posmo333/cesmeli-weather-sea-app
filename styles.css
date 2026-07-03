@@ -996,6 +996,8 @@ h1 {
   max-height: 220px;
   overflow-y: auto;
   white-space: pre-wrap;
+  user-select: text;
+  -webkit-user-select: text;
   border-radius: 18px;
   padding: 13px;
   color: var(--soft);

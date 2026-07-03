@@ -1,6 +1,6 @@
 const PLACE = {
   name: "Чешмели",
-  version: "5.0",
+  version: "5.1",
   latitude: 36.677778,
   longitude: 34.438611,
   shoreFacingDegrees: 131,
@@ -777,25 +777,57 @@ function buildTelegramTargetUrls() {
   };
 }
 
-function openTelegramShare(text) {
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return true;
+  }
+
+  const field = document.createElement("textarea");
+  field.value = text;
+  field.setAttribute("readonly", "");
+  field.style.position = "fixed";
+  field.style.top = "0";
+  field.style.left = "-9999px";
+  document.body.appendChild(field);
+  field.select();
+  const copied = document.execCommand("copy");
+  field.remove();
+
+  if (!copied) throw new Error("Clipboard copy failed");
+  return true;
+}
+
+function selectObservationPreviewText() {
+  const selection = window.getSelection?.();
+  if (!selection || !el.observationPreview) return;
+
+  const range = document.createRange();
+  range.selectNodeContents(el.observationPreview);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  el.observationPreview.focus();
+}
+
+async function openTelegramShare(text) {
   const urls = buildTelegramTargetUrls();
   let openedApp = false;
   const resetButton = () => {
     if (state.observation) el.sendTelegramButton.textContent = "В Telegram";
   };
 
-  const copyPromise = navigator.clipboard?.writeText
-    ? navigator.clipboard.writeText(text)
-    : Promise.reject(new Error("Clipboard is unavailable"));
+  el.sendTelegramButton.disabled = true;
+  el.sendTelegramButton.textContent = "Копирую...";
 
-  copyPromise
-    .then(() => {
-      el.sendTelegramButton.textContent = "Текст скопирован";
-      setTimeout(resetButton, 1800);
-    })
-    .catch(() => {
-      el.observationPreview.textContent = `${observationText(state.observation)}\n\nНе удалось скопировать автоматически. Скопируйте текст вручную и вставьте в чат @${telegramUsername()}.`;
-    });
+  try {
+    await copyTextToClipboard(text);
+  } catch (error) {
+    el.sendTelegramButton.disabled = false;
+    el.sendTelegramButton.textContent = "В Telegram";
+    el.observationPreview.textContent = `${text}\n\nНе удалось скопировать автоматически. Нажмите «Скопировать», затем откройте чат @${telegramUsername()}.`;
+    selectObservationPreviewText();
+    return;
+  }
 
   const markOpened = () => {
     openedApp = true;
@@ -808,9 +840,12 @@ function openTelegramShare(text) {
 
   window.addEventListener("pagehide", markOpened, { once: true });
   document.addEventListener("visibilitychange", handleVisibilityChange);
+  el.sendTelegramButton.disabled = false;
+  el.sendTelegramButton.textContent = "Текст скопирован";
   window.location.href = urls.app;
 
   setTimeout(() => {
+    resetButton();
     if (openedApp) return;
     window.removeEventListener("pagehide", markOpened);
     document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -1122,13 +1157,14 @@ el.copyObservationButton.addEventListener("click", async () => {
   if (!state.observation) return;
   const text = observationText(state.observation);
   try {
-    await navigator.clipboard.writeText(text);
+    await copyTextToClipboard(text);
     el.copyObservationButton.textContent = "Скопировано";
     setTimeout(() => {
       if (state.observation) el.copyObservationButton.textContent = "Скопировать";
     }, 1400);
   } catch (error) {
     el.observationPreview.textContent = `${text}\n\nЕсли копирование не сработало, выделите этот текст вручную.`;
+    selectObservationPreviewText();
   }
 });
 
