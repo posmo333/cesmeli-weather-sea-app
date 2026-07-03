@@ -1,6 +1,6 @@
 const PLACE = {
   name: "Чешмели",
-  version: "3.5",
+  version: "3.6",
   latitude: 36.677778,
   longitude: 34.438611,
   shoreFacingDegrees: 131,
@@ -151,12 +151,12 @@ function waveHeightLabel(height) {
 
 function childWaveLabel(height, windSpeed) {
   if (height >= 1.1 || windSpeed >= 26) {
-    return { text: "Опасно", className: "high", color: "#ff8b72" };
+    return { text: "", className: "high", color: "#ff8b72" };
   }
   if (height >= 0.65 || windSpeed >= 18) {
-    return { text: "Под присмотром", className: "medium", color: "#ffd45a" };
+    return { text: "", className: "medium", color: "#ffd45a" };
   }
-  return { text: "Безопасно", className: "low", color: "#62e39a" };
+  return { text: "", className: "low", color: "#62e39a" };
 }
 
 function bodyboardProfile(item) {

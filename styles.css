@@ -659,6 +659,43 @@ h1 {
   background: rgba(255, 255, 255, 0.12);
 }
 
+.wave-topline > div:first-child,
+.air-topline > div:first-child {
+  min-height: 108px;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  place-items: initial;
+  border-radius: 22px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+}
+
+.wave-topline > div:first-child::before,
+.air-topline > div:first-child::before {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 760;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.wave-topline > div:first-child::before {
+  content: "Индекс волн";
+}
+
+.air-topline > div:first-child::before {
+  content: "AQI";
+}
+
+.wave-topline > div:first-child small,
+.air-topline > div:first-child small,
+.wave-metrics div:last-child strong,
+.wave-metrics div:last-child small {
+  display: none;
+}
+
 .score-tile small {
   color: var(--muted);
   font-size: 0.72rem;
