@@ -1,6 +1,6 @@
 const PLACE = {
   name: "Чешмели",
-  version: "4.9",
+  version: "4.9.1",
   latitude: 36.677778,
   longitude: 34.438611,
   shoreFacingDegrees: 131,
@@ -199,11 +199,11 @@ function waveHeightLabel(height) {
 }
 
 function childWaveLabel(height, windSpeed) {
-  if (height >= 1.1 || windSpeed >= 26) {
+  if (height >= 1.1 || windSpeed >= 30) {
     return { text: "Не купаться", note: "опасно", className: "high", color: "#ff8b72" };
   }
-  if (height >= 0.65 || windSpeed >= 18) {
-    return { text: "С присмотром", note: "у кромки", className: "medium", color: "#ffd45a" };
+  if (height >= 0.7 || windSpeed >= 24) {
+    return { text: "Под присмотром", note: "", className: "medium", color: "#ffd45a" };
   }
   return { text: "Безопасно", note: "купание", className: "low", color: "#62e39a" };
 }
@@ -237,7 +237,7 @@ function bodyboardProfile(item) {
     summary:
       `${height.toFixed(1)} м, период ${period.toFixed(0)} с. ` +
       (score >= 76
-        ? "Волна даёт энергию для катания, но детям нужен присмотр у кромки воды."
+        ? "Волна даёт энергию для катания, детям нужен взрослый рядом."
         : score >= 52
           ? "Кататься можно, качество зависит от серий и ветра."
           : height >= 1.5 || windSpeed >= 30
@@ -802,7 +802,7 @@ function renderForecast() {
     now.europeanAqi == null
       ? "Данные воздуха сейчас недоступны."
       : `Главные частицы: PM2.5 ${Math.round(now.pm25 ?? 0)} и PM10 ${Math.round(now.pm10 ?? 0)} мкг/м³.`;
-  el.waveScore.textContent = `${wave.score}/100`;
+  el.waveScore.textContent = wave.score;
   el.waveScore.style.color = wave.score >= 76 ? "#62e39a" : wave.score >= 52 ? "#ffd45a" : "#70c7ff";
   el.waveTitle.textContent = wave.title;
   el.waveSummary.textContent = wave.summary;

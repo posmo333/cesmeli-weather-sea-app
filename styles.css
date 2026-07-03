@@ -632,10 +632,10 @@ h1 {
 .air-topline,
 .wave-topline {
   display: grid;
-  grid-template-columns: 128px minmax(0, 1fr);
-  gap: 14px;
-  align-items: stretch;
-  padding: 16px 0 14px;
+  grid-template-columns: minmax(122px, 0.42fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 18px 0 16px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -650,55 +650,27 @@ h1 {
 }
 
 .score-tile {
-  min-height: 108px;
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  border-radius: 22px;
-  padding: 14px;
-  background: rgba(255, 255, 255, 0.12);
+  width: 100%;
+  max-width: 152px;
+  min-height: 118px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 30px;
+  padding: 16px 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.08));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
   text-align: center;
-}
-
-.wave-topline > div:first-child,
-.air-topline > div:first-child {
-  min-height: 108px;
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  place-items: center;
-  border-radius: 22px;
-  padding: 14px;
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: none;
-  text-align: center;
-}
-
-.wave-topline > div:first-child::before,
-.air-topline > div:first-child::before {
-  color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 760;
-  line-height: 1.15;
-  text-transform: uppercase;
-}
-
-.wave-topline > div:first-child::before {
-  content: "Волны";
-}
-
-.air-topline > div:first-child::before {
-  content: "AQI";
-}
-
-.wave-topline > div:first-child small,
-.air-topline > div:first-child small {
-  display: none;
 }
 
 .score-tile small {
+  display: block;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 760;
   line-height: 1.15;
   text-transform: uppercase;
@@ -706,10 +678,12 @@ h1 {
 
 .score-tile span {
   display: block;
-  margin-top: 8px;
-  font-size: 2.05rem;
-  font-weight: 760;
-  line-height: 0.95;
+  margin-top: 10px;
+  color: #70c7ff;
+  font-size: clamp(2.15rem, 5.2vw, 2.8rem);
+  font-weight: 780;
+  line-height: 0.92;
+  letter-spacing: 0;
 }
 
 .wave-topline h3 {
@@ -733,9 +707,13 @@ h1 {
 
 .wave-metrics div {
   min-height: 88px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   border-radius: 20px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.12);
+  padding: 13px 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.135), rgba(255, 255, 255, 0.095));
 }
 
 .wave-metrics span,
@@ -749,9 +727,9 @@ h1 {
 
 .wave-metrics strong {
   display: block;
-  margin: 8px 0 2px;
+  margin: 7px 0 2px;
   color: #fff;
-  font-size: 1.36rem;
+  font-size: clamp(1.12rem, 3.6vw, 1.36rem);
   line-height: 1;
 }
 
@@ -775,9 +753,13 @@ h1 {
 
 .air-metrics div {
   min-height: 104px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   border-radius: 22px;
   padding: 14px;
-  background: rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.135), rgba(255, 255, 255, 0.095));
 }
 
 .air-metrics span,
@@ -1112,14 +1094,16 @@ h1 {
   }
 
   .air-topline {
-    grid-template-columns: 116px minmax(0, 1fr);
-    gap: 10px;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 14px;
+    align-items: center;
     text-align: left;
   }
 
   .wave-topline {
-    grid-template-columns: 116px minmax(0, 1fr);
-    gap: 10px;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 14px;
+    align-items: center;
     text-align: left;
   }
 
@@ -1138,13 +1122,14 @@ h1 {
   }
 
   .score-tile {
-    min-height: 96px;
-    border-radius: 20px;
-    padding: 12px;
+    min-height: 112px;
+    border-radius: 28px;
+    padding: 14px 10px;
   }
 
   .score-tile span {
-    font-size: 1.72rem;
+    margin-top: 9px;
+    font-size: 2.26rem;
   }
 
   .air-metrics {
