@@ -1,10 +1,14 @@
 const PLACE = {
   name: "Чешмели",
-  version: "4.9.4",
+  version: "4.9.5",
   latitude: 36.677778,
   longitude: 34.438611,
   shoreFacingDegrees: 131,
   timezone: "Europe/Istanbul",
+};
+
+const TELEGRAM_TARGET = {
+  username: "fatal_n",
 };
 
 PLACE.onshoreDirection = (PLACE.shoreFacingDegrees + 180) % 360;
@@ -762,25 +766,40 @@ function observationText(observation) {
   return lines.join("\n");
 }
 
-function buildTelegramShareUrls(text) {
-  const appUrl = new URL("tg://msg_url");
-  const webUrl = new URL("https://t.me/share/url");
-  const shareUrl = "https://posmo333.github.io/cesmeli-weather-sea-app/";
+function telegramUsername() {
+  return TELEGRAM_TARGET.username.replace(/^@/, "");
+}
 
-  appUrl.searchParams.set("url", shareUrl);
-  appUrl.searchParams.set("text", text);
-  webUrl.searchParams.set("url", shareUrl);
-  webUrl.searchParams.set("text", text);
+function buildTelegramTargetUrls() {
+  const username = telegramUsername();
+  const appUrl = new URL("tg://resolve");
+  appUrl.searchParams.set("domain", username);
 
   return {
     app: appUrl.toString(),
-    web: webUrl.toString(),
+    web: `https://t.me/${encodeURIComponent(username)}`,
   };
 }
 
 function openTelegramShare(text) {
-  const urls = buildTelegramShareUrls(text);
+  const urls = buildTelegramTargetUrls();
   let openedApp = false;
+  const resetButton = () => {
+    if (state.observation) el.sendTelegramButton.textContent = "В Telegram";
+  };
+
+  const copyPromise = navigator.clipboard?.writeText
+    ? navigator.clipboard.writeText(text)
+    : Promise.reject(new Error("Clipboard is unavailable"));
+
+  copyPromise
+    .then(() => {
+      el.sendTelegramButton.textContent = "Текст скопирован";
+      setTimeout(resetButton, 1800);
+    })
+    .catch(() => {
+      el.observationPreview.textContent = `${observationText(state.observation)}\n\nНе удалось скопировать автоматически. Скопируйте текст вручную и вставьте в чат @${telegramUsername()}.`;
+    });
 
   const markOpened = () => {
     openedApp = true;
