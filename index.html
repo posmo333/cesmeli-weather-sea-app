@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Чешмели Sea Weather 4.9.1</title>
-    <link rel="stylesheet" href="./styles.css?v=4.9.1" />
+    <title>Чешмели Sea Weather 4.9.2</title>
+    <link rel="stylesheet" href="./styles.css?v=4.9.2" />
   </head>
   <body>
     <main class="app-shell">
@@ -17,7 +17,7 @@
         </div>
 
         <div class="place-block">
-          <p>Мерсин · Sea Weather 4.9.1</p>
+          <p>Мерсин · Sea Weather 4.9.2</p>
           <h1>Чешмели</h1>
           <div id="temperatureNow" class="temperature">--</div>
           <p id="conditionNow" class="condition">Загрузка</p>
@@ -280,8 +280,18 @@
           <button type="button" data-value="1" data-label="Очень грязно">Очень грязно</button>
         </div>
 
+        <label class="observation-note">
+          <span>Примечание</span>
+          <textarea
+            id="observationNote"
+            maxlength="220"
+            rows="3"
+            placeholder="Например: есть пена, вода мутная, мусор у волнореза"
+          ></textarea>
+        </label>
+
         <div id="observationPreview" class="observation-preview">
-          Выберите оценку, и приложение подготовит запись для отправки.
+          Выберите оценку, при желании добавьте примечание.
         </div>
 
         <div class="dialog-actions">
@@ -295,6 +305,6 @@
       </form>
     </dialog>
 
-    <script src="./app.js?v=4.9.1"></script>
+    <script src="./app.js?v=4.9.2"></script>
   </body>
 </html>

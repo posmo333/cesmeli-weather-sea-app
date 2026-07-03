@@ -1,6 +1,6 @@
 const PLACE = {
   name: "Чешмели",
-  version: "4.9.1",
+  version: "4.9.2",
   latitude: 36.677778,
   longitude: 34.438611,
   shoreFacingDegrees: 131,
@@ -89,6 +89,7 @@ const el = {
   closeObservationButton: document.querySelector("#closeObservationButton"),
   observationDialog: document.querySelector("#observationDialog"),
   cleanlinessOptions: document.querySelector("#cleanlinessOptions"),
+  observationNote: document.querySelector("#observationNote"),
   observationPreview: document.querySelector("#observationPreview"),
   sendTelegramButton: document.querySelector("#sendTelegramButton"),
   copyObservationButton: document.querySelector("#copyObservationButton"),
@@ -672,7 +673,11 @@ function getCurrentForecastItem(items) {
   }, items[0]);
 }
 
-function buildObservation(cleanliness) {
+function currentObservationNote() {
+  return (el.observationNote?.value ?? "").trim();
+}
+
+function buildObservation(cleanliness, note = currentObservationNote()) {
   const now = state.currentItem;
   const label = state.currentLabel ?? riskLabel(now?.risk?.score ?? 0);
   const sentAt = new Date();
@@ -695,6 +700,7 @@ function buildObservation(cleanliness) {
     actual: {
       cleanlinessValue: Number(cleanliness.value),
       cleanlinessLabel: cleanliness.label,
+      note: note.trim(),
     },
     forecast: now
       ? {
@@ -738,6 +744,9 @@ function observationText(observation) {
     `${observation.place.name} · ${observation.localTime}`,
     `Факт: ${observation.actual.cleanlinessLabel}`,
   ];
+  if (observation.actual.note) {
+    lines.push(`Примечание: ${observation.actual.note}`);
+  }
 
   if (forecast) {
     lines.push(
@@ -757,14 +766,14 @@ function observationText(observation) {
 function updateObservationPreview() {
   const observation = state.observation;
   if (!observation) {
-    el.observationPreview.textContent = "Выберите оценку, и приложение подготовит запись для отправки.";
+    el.observationPreview.textContent = "Выберите оценку, при желании добавьте примечание.";
     el.sendTelegramButton.disabled = true;
     el.copyObservationButton.disabled = true;
     el.copyObservationButton.textContent = "Скопировать";
     return;
   }
 
-  el.observationPreview.textContent = observationText(observation);
+  el.observationPreview.textContent = `Спасибо за вашу оценку.\n\n${observationText(observation)}`;
   el.sendTelegramButton.disabled = false;
   el.copyObservationButton.disabled = false;
   el.copyObservationButton.textContent = "Скопировать";
@@ -1019,6 +1028,7 @@ window.addEventListener("resize", () => {
 
 el.openObservationButton.addEventListener("click", () => {
   state.observation = null;
+  el.observationNote.value = "";
   el.cleanlinessOptions.querySelectorAll("button").forEach((button) => {
     button.classList.remove("active");
   });
@@ -1039,6 +1049,12 @@ el.cleanlinessOptions.addEventListener("click", (event) => {
     value: button.dataset.value,
     label: button.dataset.label,
   });
+  updateObservationPreview();
+});
+
+el.observationNote.addEventListener("input", () => {
+  if (!state.observation) return;
+  state.observation.actual.note = currentObservationNote();
   updateObservationPreview();
 });
 
