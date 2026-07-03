@@ -868,12 +868,18 @@ h1 {
   padding: 0 18px;
   font-weight: 760;
   cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
 }
 
 .primary-button {
   color: #0d2550;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 8px 22px rgba(3, 20, 50, 0.16);
+}
+
+.primary-button:active,
+.secondary-button:active {
+  transform: scale(0.985);
 }
 
 .secondary-button {

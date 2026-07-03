@@ -1,6 +1,6 @@
 const PLACE = {
   name: "Чешмели",
-  version: "5.1",
+  version: "5.1.1",
   latitude: 36.677778,
   longitude: 34.438611,
   shoreFacingDegrees: 131,
