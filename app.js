@@ -1,6 +1,6 @@
 const PLACE = {
   name: "Чешмели",
-  version: "4.9.2",
+  version: "4.9.4",
   latitude: 36.677778,
   longitude: 34.438611,
   shoreFacingDegrees: 131,
@@ -759,8 +759,48 @@ function observationText(observation) {
     );
   }
 
-  lines.push(`Координаты: ${observation.place.latitude}, ${observation.place.longitude}`);
   return lines.join("\n");
+}
+
+function buildTelegramShareUrls(text) {
+  const appUrl = new URL("tg://msg_url");
+  const webUrl = new URL("https://t.me/share/url");
+  const shareUrl = "https://posmo333.github.io/cesmeli-weather-sea-app/";
+
+  appUrl.searchParams.set("url", shareUrl);
+  appUrl.searchParams.set("text", text);
+  webUrl.searchParams.set("url", shareUrl);
+  webUrl.searchParams.set("text", text);
+
+  return {
+    app: appUrl.toString(),
+    web: webUrl.toString(),
+  };
+}
+
+function openTelegramShare(text) {
+  const urls = buildTelegramShareUrls(text);
+  let openedApp = false;
+
+  const markOpened = () => {
+    openedApp = true;
+    window.removeEventListener("pagehide", markOpened);
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+  };
+  const handleVisibilityChange = () => {
+    if (document.hidden) markOpened();
+  };
+
+  window.addEventListener("pagehide", markOpened, { once: true });
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+  window.location.href = urls.app;
+
+  setTimeout(() => {
+    if (openedApp) return;
+    window.removeEventListener("pagehide", markOpened);
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+    window.location.href = urls.web;
+  }, 1100);
 }
 
 function updateObservationPreview() {
@@ -1060,10 +1100,7 @@ el.observationNote.addEventListener("input", () => {
 
 el.sendTelegramButton.addEventListener("click", () => {
   if (!state.observation) return;
-  const url = new URL("https://t.me/share/url");
-  url.searchParams.set("url", "https://posmo333.github.io/cesmeli-weather-sea-app/");
-  url.searchParams.set("text", observationText(state.observation));
-  window.open(url.toString(), "_blank", "noopener");
+  openTelegramShare(observationText(state.observation));
 });
 
 el.copyObservationButton.addEventListener("click", async () => {
