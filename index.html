@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Чешмели Sea Weather 3.6</title>
-    <link rel="stylesheet" href="./styles.css?v=3.6" />
+    <title>Чешмели Sea Weather 4.5 beta</title>
+    <link rel="stylesheet" href="./styles.css?v=4.5-beta" />
   </head>
   <body>
     <main class="app-shell">
@@ -17,7 +17,7 @@
         </div>
 
         <div class="place-block">
-          <p>Мерсин · Sea Weather 3.6</p>
+          <p>Мерсин · Sea Weather 4.5 beta</p>
           <h1>Чешмели</h1>
           <div id="temperatureNow" class="temperature">--</div>
           <p id="conditionNow" class="condition">Загрузка</p>
@@ -174,6 +174,25 @@
         <div id="riskFactors" class="factor-list"></div>
       </section>
 
+      <section class="module observation-module">
+        <div class="module-title">
+          <span>✓</span>
+          <h2>Факт на пляже</h2>
+        </div>
+        <div class="observation-panel">
+          <div>
+            <h3>Оценить чистоту моря</h3>
+            <p>
+              Запись включает время, прогноз риска и фактическое состояние воды.
+              В браузере она не хранится.
+            </p>
+          </div>
+          <button id="openObservationButton" class="primary-button" type="button">
+            Оценить
+          </button>
+        </div>
+      </section>
+
       <section class="module science-module">
         <div class="module-title">
           <span>∑</span>
@@ -196,14 +215,29 @@
             </p>
           </article>
           <article>
-            <b>3. Источник мусора</b>
+            <b>3. Горный сток</b>
+            <p>
+              В бете учитываются дожди выше по долинам Kargıpınarı/Gilindire
+              и Tece/Fındıkpınarı: задержка стока оценочная, по расстоянию
+              от верховьев до моря.
+            </p>
+          </article>
+          <article>
+            <b>4. Дождевой фронт</b>
+            <p>
+              Если дождь накрывает широкую горную зону Мерсина, риск повышается
+              даже без точного попадания в один ручей.
+            </p>
+          </article>
+          <article>
+            <b>5. Источник мусора</b>
             <p>
               После дождя и при туристической нагрузке возрастает шанс свежего
               мусора с берега, ливневого стока, ручьёв и портово-рыболовных зон.
             </p>
           </article>
           <article>
-            <b>4. Ограничение</b>
+            <b>6. Ограничение</b>
             <p>
               Это индекс вероятности для пляжа, а не спутниковое обнаружение
               конкретного пятна мусора. Воздух считается отдельно по модели CAMS.
@@ -226,6 +260,41 @@
       </section>
     </main>
 
-    <script src="./app.js?v=3.6"></script>
+    <dialog id="observationDialog" class="observation-dialog">
+      <form method="dialog">
+        <div class="dialog-top">
+          <div>
+            <span>Факт на пляже</span>
+            <h2>Чистота моря</h2>
+          </div>
+          <button id="closeObservationButton" class="icon-button" type="button" title="Закрыть">
+            ×
+          </button>
+        </div>
+
+        <div id="cleanlinessOptions" class="cleanliness-options" aria-label="Фактическая чистота моря">
+          <button type="button" data-value="5" data-label="Идеально чисто">Идеально чисто</button>
+          <button type="button" data-value="4" data-label="Чисто">Чисто</button>
+          <button type="button" data-value="3" data-label="Есть немного мусора">Есть немного мусора</button>
+          <button type="button" data-value="2" data-label="Грязно">Грязно</button>
+          <button type="button" data-value="1" data-label="Очень грязно">Очень грязно</button>
+        </div>
+
+        <div id="observationPreview" class="observation-preview">
+          Выберите оценку, и приложение подготовит запись для отправки.
+        </div>
+
+        <div class="dialog-actions">
+          <button id="sendTelegramButton" class="primary-button" type="button" disabled>
+            Отправить в Telegram
+          </button>
+          <button id="downloadObservationButton" class="secondary-button" type="button" disabled>
+            Скачать JSON
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="./app.js?v=4.5-beta"></script>
   </body>
 </html>

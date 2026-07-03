@@ -1,6 +1,6 @@
 const PLACE = {
   name: "Чешмели",
-  version: "3.6",
+  version: "4.5 beta",
   latitude: 36.677778,
   longitude: 34.438611,
   shoreFacingDegrees: 131,
@@ -12,7 +12,42 @@ PLACE.onshoreDirection = (PLACE.shoreFacingDegrees + 180) % 360;
 const state = {
   hours: 24,
   forecast: [],
+  currentItem: null,
+  currentLabel: null,
+  observation: null,
 };
+
+const RUNOFF_CATCHMENTS = [
+  {
+    name: "Kargıpınarı/Gilindire",
+    shortName: "Kargıpınarı",
+    delayHours: 5,
+    weight: 1,
+    points: [
+      { name: "верховье Tepeköy", latitude: 36.84, longitude: 34.32, weight: 0.6 },
+      { name: "средняя долина Elvanlı", latitude: 36.76, longitude: 34.37, weight: 0.4 },
+    ],
+  },
+  {
+    name: "Tece/Fındıkpınarı",
+    shortName: "Tece",
+    delayHours: 7,
+    weight: 0.85,
+    points: [
+      { name: "верховье Fındıkpınarı", latitude: 36.96, longitude: 34.42, weight: 0.65 },
+      { name: "средняя долина Tece", latitude: 36.82, longitude: 34.48, weight: 0.35 },
+    ],
+  },
+];
+
+const REGIONAL_RAIN_POINTS = [
+  { name: "Erdemli hills", latitude: 36.82, longitude: 34.23, weight: 1 },
+  { name: "Kargıpınarı hills", latitude: 36.86, longitude: 34.34, weight: 1 },
+  { name: "Tece/Fındıkpınarı hills", latitude: 36.96, longitude: 34.43, weight: 1 },
+  { name: "Mezitli uplands", latitude: 36.88, longitude: 34.55, weight: 0.9 },
+  { name: "Mersin north", latitude: 36.91, longitude: 34.67, weight: 0.85 },
+  { name: "Toroslar east", latitude: 37.02, longitude: 34.78, weight: 0.75 },
+];
 
 const el = {
   updatedAt: document.querySelector("#updatedAt"),
@@ -50,6 +85,13 @@ const el = {
   chart: document.querySelector("#riskChart"),
   forecastList: document.querySelector("#forecastList"),
   segments: document.querySelectorAll(".segment"),
+  openObservationButton: document.querySelector("#openObservationButton"),
+  closeObservationButton: document.querySelector("#closeObservationButton"),
+  observationDialog: document.querySelector("#observationDialog"),
+  cleanlinessOptions: document.querySelector("#cleanlinessOptions"),
+  observationPreview: document.querySelector("#observationPreview"),
+  sendTelegramButton: document.querySelector("#sendTelegramButton"),
+  downloadObservationButton: document.querySelector("#downloadObservationButton"),
 };
 
 function degreesToCompass(deg) {
@@ -128,9 +170,16 @@ function uvLabel(value) {
 }
 
 function riskLabel(score) {
-  if (score >= 68) return { text: "Высокий", className: "high", color: "#ff8b72" };
-  if (score >= 40) return { text: "Средний", className: "medium", color: "#ffd45a" };
+  if (score >= 68) return { text: "Высокий", className: "high", color: "#ff6b5f" };
+  if (score >= 40) return { text: "Средний", className: "medium", color: "#ffb84d" };
   return { text: "Низкий", className: "low", color: "#62e39a" };
+}
+
+function runoffLabel(score) {
+  if (score >= 0.68) return "сильный";
+  if (score >= 0.36) return "заметный";
+  if (score >= 0.16) return "слабый";
+  return "нет";
 }
 
 function airQualityLabel(aqi) {
@@ -207,6 +256,113 @@ function weatherCondition(code, rainProbability) {
   return { text: "Ясно", symbol: "☀" };
 }
 
+function rainAtHour(source, targetMs) {
+  if (!source?.rainByHour) return 0;
+  const hourMs = 60 * 60 * 1000;
+  const rounded = Math.round(targetMs / hourMs) * hourMs;
+  return source.rainByHour.get(rounded) ?? 0;
+}
+
+function rainSum(source, centerMs, hoursBefore, hoursAfter = 0) {
+  let total = 0;
+  for (let offset = -hoursBefore; offset <= hoursAfter; offset += 1) {
+    total += rainAtHour(source, centerMs + offset * 60 * 60 * 1000);
+  }
+  return total;
+}
+
+function calculateRunoff(time, runoffSources) {
+  if (!runoffSources?.length) {
+    return {
+      score: 0,
+      label: "нет",
+      source: "нет данных",
+      rainMm: 0,
+      details: [],
+    };
+  }
+
+  const timeMs = new Date(time).getTime();
+  const details = runoffSources.map((catchment) => {
+    const delayMs = catchment.delayHours * 60 * 60 * 1000;
+    const delayedMs = timeMs - delayMs;
+    let weightedRain = 0;
+    let totalWeight = 0;
+
+    catchment.sources.forEach((source) => {
+      let sourceRain = 0;
+      [0, 1, 2, 3, 4, 5].forEach((offset) => {
+        sourceRain += rainAtHour(source, delayedMs - offset * 60 * 60 * 1000);
+      });
+      weightedRain += sourceRain * source.weight;
+      totalWeight += source.weight;
+    });
+
+    const rainMm = totalWeight > 0 ? weightedRain / totalWeight : 0;
+    const score = clamp(rainMm / 18, 0, 1) * catchment.weight;
+    return {
+      name: catchment.name,
+      shortName: catchment.shortName,
+      delayHours: catchment.delayHours,
+      rainMm,
+      score,
+    };
+  });
+
+  const strongest = details.reduce((max, item) => (item.score > max.score ? item : max), details[0]);
+  const combined = clamp(details.reduce((sum, item) => sum + item.score, 0), 0, 1);
+
+  return {
+    score: combined,
+    label: runoffLabel(combined),
+    source: strongest?.shortName ?? "нет данных",
+    rainMm: strongest?.rainMm ?? 0,
+    details,
+  };
+}
+
+function calculateRegionalRain(time, regionalSources) {
+  if (!regionalSources?.length) {
+    return {
+      score: 0,
+      label: "нет",
+      coverage: 0,
+      averageRainMm: 0,
+      wetPoints: 0,
+    };
+  }
+
+  const timeMs = new Date(time).getTime();
+  let weightedCoverage = 0;
+  let weightedRain = 0;
+  let totalWeight = 0;
+  let wetPoints = 0;
+
+  regionalSources.forEach((source) => {
+    const rain24h = rainSum(source, timeMs, 18, 6);
+    const rain12h = rainSum(source, timeMs, 10, 2);
+    const active = rain24h >= 4 || rain12h >= 2;
+    if (active) wetPoints += 1;
+    weightedCoverage += (active ? 1 : 0) * source.weight;
+    weightedRain += rain24h * source.weight;
+    totalWeight += source.weight;
+  });
+
+  const coverage = totalWeight > 0 ? weightedCoverage / totalWeight : 0;
+  const averageRainMm = totalWeight > 0 ? weightedRain / totalWeight : 0;
+  const coveragePower = clamp((coverage - 0.25) / 0.65, 0, 1);
+  const intensityPower = clamp(averageRainMm / 22, 0, 1);
+  const score = clamp(coveragePower * 0.62 + intensityPower * 0.38, 0, 1);
+
+  return {
+    score,
+    label: runoffLabel(score),
+    coverage,
+    averageRainMm,
+    wetPoints,
+  };
+}
+
 function calculateRisk(item) {
   const windToward = (item.windDirection + 180) % 360;
   const waveToward = (item.waveDirection + 180) % 360;
@@ -228,13 +384,17 @@ function calculateRisk(item) {
   const alongshoreTrapping = clamp((alongshoreSpeed - Math.abs(onshoreDrift)) / 0.28, 0, 1);
   const energeticBeach = clamp(item.waveHeight / 1.4, 0, 1);
   const rainPower = clamp(item.rainProbability / 80, 0, 1);
+  const runoffPower = item.runoff?.score ?? 0;
+  const regionalRainPower = item.regionalRain?.score ?? 0;
   const calmRetention = item.waveHeight < 0.35 && driftSpeed < 0.12 ? 1 : 0;
 
   const score = Math.round(
     10 +
       onshoreTransport * 45 +
       energeticBeach * shoreWave * 16 +
-      rainPower * 14 +
+      rainPower * 7 +
+      runoffPower * 16 +
+      regionalRainPower * 14 +
       calmRetention * 8 +
       alongshoreTrapping * 7
   );
@@ -256,9 +416,34 @@ function calculateRisk(item) {
       detail: shoreWave > 0.5 ? "распространение волны поджимает к пляжу" : "умеренное влияние",
     },
     {
+      name: "Горный сток",
+      value:
+        item.runoff?.label === "нет"
+          ? "нет сигнала"
+          : `${item.runoff.label}, ${item.runoff.source}`,
+      detail:
+        item.runoff?.score > 0.16
+          ? `дождь выше по руслу мог прийти к морю с задержкой`
+          : "в верховьях ручьёв нет заметного дождевого сигнала",
+    },
+    {
+      name: "Фронт дождя",
+      value:
+        item.regionalRain?.label === "нет"
+          ? "нет сигнала"
+          : `${item.regionalRain.label}, ${Math.round((item.regionalRain.coverage ?? 0) * 100)}% зоны`,
+      detail:
+        item.regionalRain?.score > 0.16
+          ? "широкий дождь по горам повышает общий смыв сегодня и завтра"
+          : "нет широкого дождевого фронта по горной зоне",
+    },
+    {
       name: "Дрейф",
       value: `${onshoreDrift >= 0 ? "к берегу" : "от берега"} ${Math.abs(onshoreDrift).toFixed(2)} м/с`,
-      detail: rainPower > 0.45 ? "дождь может добавить сток с берега" : "сумма течения, ветра и волны",
+      detail:
+        runoffPower > 0.28 || regionalRainPower > 0.28
+          ? "дождевой смыв усиливает источник мусора"
+          : "сумма течения, ветра и волны",
     },
   ];
 
@@ -295,6 +480,51 @@ async function fetchJson(url) {
   }
 }
 
+async function loadRainPoint(point) {
+  const runoffUrl = new URL("https://api.open-meteo.com/v1/forecast");
+  runoffUrl.search = new URLSearchParams({
+    latitude: point.latitude,
+    longitude: point.longitude,
+    hourly: "precipitation,rain,showers,precipitation_probability",
+    forecast_days: "4",
+    past_hours: "24",
+    timezone: PLACE.timezone,
+  });
+
+  const data = await fetchJson(runoffUrl);
+  const rainByHour = new Map();
+  data.hourly.time.forEach((time, index) => {
+    const rain =
+      data.hourly.precipitation?.[index] ??
+      (data.hourly.rain?.[index] ?? 0) + (data.hourly.showers?.[index] ?? 0);
+    rainByHour.set(new Date(time).getTime(), rain ?? 0);
+  });
+
+  return {
+    name: point.name,
+    weight: point.weight,
+    rainByHour,
+  };
+}
+
+async function loadRunoffSources() {
+  const catchments = await Promise.all(
+    RUNOFF_CATCHMENTS.map(async (catchment) => {
+      const sources = await Promise.all(
+        catchment.points.map((point) => loadRainPoint(point))
+      );
+
+      return { ...catchment, sources };
+    })
+  );
+
+  return catchments;
+}
+
+async function loadRegionalRainSources() {
+  return Promise.all(REGIONAL_RAIN_POINTS.map((point) => loadRainPoint(point)));
+}
+
 async function loadForecast() {
   const weatherUrl = new URL("https://api.open-meteo.com/v1/forecast");
   weatherUrl.search = new URLSearchParams({
@@ -323,10 +553,12 @@ async function loadForecast() {
     timezone: PLACE.timezone,
   });
 
-  const [weather, marine, air] = await Promise.all([
+  const [weather, marine, air, runoffSources, regionalRainSources] = await Promise.all([
     fetchJson(weatherUrl),
     fetchJson(marineUrl),
     fetchJson(airUrl),
+    loadRunoffSources().catch(() => []),
+    loadRegionalRainSources().catch(() => []),
   ]);
   const start = getNearestIndex(weather.hourly.time);
   const airStart = getNearestIndex(air.hourly.time);
@@ -356,6 +588,8 @@ async function loadForecast() {
       ozone: air.hourly.ozone?.[airIndex] ?? null,
       nitrogenDioxide: air.hourly.nitrogen_dioxide?.[airIndex] ?? null,
       dust: air.hourly.dust?.[airIndex] ?? null,
+      runoff: calculateRunoff(time, runoffSources),
+      regionalRain: calculateRegionalRain(time, regionalRainSources),
       demo: false,
     };
     return { ...item, risk: calculateRisk(item) };
@@ -389,6 +623,20 @@ function makeDemoForecast() {
       ozone: 70 + Math.max(0, Math.cos(index / 7)) * 35,
       nitrogenDioxide: 12 + Math.max(0, Math.sin(index / 5)) * 20,
       dust: 4 + Math.max(0, Math.cos(index / 13)) * 16,
+      runoff: {
+        score: index % 22 > 14 ? 0.38 : 0.08,
+        label: index % 22 > 14 ? "заметный" : "нет",
+        source: "Kargıpınarı",
+        rainMm: index % 22 > 14 ? 7 : 1,
+        details: [],
+      },
+      regionalRain: {
+        score: index % 30 > 18 ? 0.48 : 0.06,
+        label: index % 30 > 18 ? "заметный" : "нет",
+        coverage: index % 30 > 18 ? 0.62 : 0.12,
+        averageRainMm: index % 30 > 18 ? 12 : 1,
+        wetPoints: index % 30 > 18 ? 4 : 1,
+      },
       demo: true,
     };
     return { ...item, risk: calculateRisk(item) };
@@ -415,15 +663,140 @@ function formatAxisHour(time) {
   }).format(new Date(time));
 }
 
+function formatFileDate(date = new Date()) {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: PLACE.timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+    .format(date)
+    .replace(" ", "-")
+    .replaceAll(":", "");
+}
+
+function buildObservation(cleanliness) {
+  const now = state.currentItem;
+  const label = state.currentLabel ?? riskLabel(now?.risk?.score ?? 0);
+  const sentAt = new Date();
+
+  return {
+    type: "cesmeli_sea_observation",
+    appVersion: PLACE.version,
+    sentAt: sentAt.toISOString(),
+    localTime: new Intl.DateTimeFormat("ru-RU", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: PLACE.timezone,
+    }).format(sentAt),
+    place: {
+      name: PLACE.name,
+      latitude: PLACE.latitude,
+      longitude: PLACE.longitude,
+      shoreFacingDegrees: PLACE.shoreFacingDegrees,
+    },
+    actual: {
+      cleanlinessValue: Number(cleanliness.value),
+      cleanlinessLabel: cleanliness.label,
+    },
+    forecast: now
+      ? {
+          forecastTime: now.time,
+          riskScore: now.risk.score,
+          riskLevel: label.text,
+          windSpeedKmh: Math.round(now.windSpeed),
+          windDirection: degreesToCompass(now.windDirection),
+          waveHeightM: Number(now.waveHeight.toFixed(1)),
+          wavePeriodS: Math.round(now.wavePeriod),
+          currentSpeedMs: Number(now.currentSpeed.toFixed(2)),
+          currentDirection: degreesToCompass(now.currentDirection),
+          waterTemperatureC: now.waterTemperature == null ? null : Math.round(now.waterTemperature),
+          uvIndex: Math.round(now.uvIndex),
+          airAqi: now.europeanAqi == null ? null : Math.round(now.europeanAqi),
+          runoff: now.runoff
+            ? {
+                label: now.runoff.label,
+                source: now.runoff.source,
+                score: Number(now.runoff.score.toFixed(2)),
+                rainMm: Number(now.runoff.rainMm.toFixed(1)),
+              }
+            : null,
+          regionalRain: now.regionalRain
+            ? {
+                label: now.regionalRain.label,
+                score: Number(now.regionalRain.score.toFixed(2)),
+                coveragePercent: Math.round((now.regionalRain.coverage ?? 0) * 100),
+                averageRainMm: Number(now.regionalRain.averageRainMm.toFixed(1)),
+              }
+            : null,
+        }
+      : null,
+  };
+}
+
+function observationText(observation) {
+  const forecast = observation.forecast;
+  const lines = [
+    "Наблюдение моря",
+    `${observation.place.name} · ${observation.localTime}`,
+    `Факт: ${observation.actual.cleanlinessLabel}`,
+  ];
+
+  if (forecast) {
+    lines.push(
+      `Прогноз мусора: ${forecast.riskScore}/100 (${forecast.riskLevel})`,
+      `Ветер: ${forecast.windSpeedKmh} км/ч ${forecast.windDirection}`,
+      `Волны: ${forecast.waveHeightM} м, период ${forecast.wavePeriodS} с`,
+      `Течение: ${forecast.currentSpeedMs} м/с ${forecast.currentDirection}`,
+      `Горный сток: ${forecast.runoff?.label ?? "нет данных"}`,
+      `Фронт дождя: ${forecast.regionalRain?.label ?? "нет данных"}`
+    );
+  }
+
+  lines.push(`Координаты: ${observation.place.latitude}, ${observation.place.longitude}`);
+  return lines.join("\n");
+}
+
+function updateObservationPreview() {
+  const observation = state.observation;
+  if (!observation) {
+    el.observationPreview.textContent = "Выберите оценку, и приложение подготовит запись для отправки.";
+    el.sendTelegramButton.disabled = true;
+    el.downloadObservationButton.disabled = true;
+    return;
+  }
+
+  el.observationPreview.textContent = observationText(observation);
+  el.sendTelegramButton.disabled = false;
+  el.downloadObservationButton.disabled = false;
+}
+
+function downloadObservation(observation) {
+  const blob = new Blob([JSON.stringify(observation, null, 2)], {
+    type: "application/json;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `cesmeli-observation-${formatFileDate(new Date(observation.sentAt))}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function renderForecast() {
   const visible = state.forecast.slice(0, state.hours);
   const now = visible[0];
   applyTimeTheme(new Date(now.time));
-  const averageRisk = Math.round(
-    visible.reduce((sum, item) => sum + item.risk.score, 0) / Math.max(visible.length, 1)
-  );
+  const currentRisk = now.risk.score;
   const peak = visible.reduce((max, item) => (item.risk.score > max.risk.score ? item : max), now);
-  const label = riskLabel(averageRisk);
+  const label = riskLabel(currentRisk);
+  state.currentItem = now;
+  state.currentLabel = label;
   const condition = weatherCondition(now.weatherCode, now.rainProbability);
   const airLabel = airQualityLabel(now.europeanAqi ?? 0);
   const wave = bodyboardProfile(now);
@@ -451,15 +824,15 @@ function renderForecast() {
   el.waveScore.style.color = wave.score >= 76 ? "#62e39a" : wave.score >= 52 ? "#ffd45a" : "#70c7ff";
   el.waveTitle.textContent = wave.title;
   el.waveSummary.textContent = wave.summary;
-  el.riskScore.textContent = averageRisk;
-  el.gauge.style.background = `conic-gradient(${label.color} ${averageRisk * 3.6}deg, rgba(255, 255, 255, 0.18) 0deg)`;
+  el.riskScore.textContent = currentRisk;
+  el.gauge.style.background = `conic-gradient(${label.color} ${currentRisk * 3.6}deg, rgba(255, 255, 255, 0.18) 0deg)`;
   el.riskTitle.textContent = `${label.text} риск у берега`;
   el.heroSummary.textContent =
     `Вода ${
       now.waterTemperature == null ? "--" : Math.round(now.waterTemperature)
-    }°C · УФ ${Math.round(now.uvIndex)} · мусор ${peak.risk.score}/100 ${formatHour(peak.time).toLowerCase()} · AQI ${now.europeanAqi == null ? "--" : Math.round(now.europeanAqi)}`;
+    }°C · УФ ${Math.round(now.uvIndex)} · мусор ${currentRisk}/100 сейчас · AQI ${now.europeanAqi == null ? "--" : Math.round(now.europeanAqi)}`;
   el.riskSummary.textContent =
-    `Пик ожидается ${formatHour(peak.time).toLowerCase()}: ${peak.risk.score} из 100. ` +
+    `Сейчас ${currentRisk} из 100. Пик ${formatHour(peak.time).toLowerCase()}: ${peak.risk.score} из 100. ` +
     (label.className === "high"
       ? "Лучше проверить море перед купанием и выбрать участок с открытым обзором воды."
       : label.className === "medium"
@@ -598,23 +971,26 @@ function renderChart(items) {
     ctx.fillText(formatAxisHour(item.time), x, pad.top + plotHeight + 12);
   });
 
-  ctx.beginPath();
-  items.forEach((item, index) => {
-    const x = pad.left + (index / Math.max(items.length - 1, 1)) * plotWidth;
-    const y = pad.top + plotHeight - (item.risk.score / 100) * plotHeight;
-    if (index === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  const gradient = ctx.createLinearGradient(pad.left, 0, width - pad.right, 0);
-  gradient.addColorStop(0, "#62e39a");
-  gradient.addColorStop(0.55, "#ffd45a");
-  gradient.addColorStop(1, "#ff8b72");
-  ctx.strokeStyle = gradient;
   ctx.lineWidth = 3;
-  ctx.stroke();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  for (let index = 1; index < items.length; index += 1) {
+    const previous = items[index - 1];
+    const current = items[index];
+    const x1 = pad.left + ((index - 1) / Math.max(items.length - 1, 1)) * plotWidth;
+    const y1 = pad.top + plotHeight - (previous.risk.score / 100) * plotHeight;
+    const x2 = pad.left + (index / Math.max(items.length - 1, 1)) * plotWidth;
+    const y2 = pad.top + plotHeight - (current.risk.score / 100) * plotHeight;
+    const segmentRisk = Math.round((previous.risk.score + current.risk.score) / 2);
+    ctx.strokeStyle = riskLabel(segmentRisk).color;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
 
   const firstY = pad.top + plotHeight - (items[0].risk.score / 100) * plotHeight;
-  ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+  ctx.fillStyle = riskLabel(items[0].risk.score).color;
   ctx.beginPath();
   ctx.arc(pad.left, firstY, 4, 0, Math.PI * 2);
   ctx.fill();
@@ -657,6 +1033,44 @@ el.segments.forEach((button) => {
 
 window.addEventListener("resize", () => {
   if (state.forecast.length > 0) renderChart(state.forecast.slice(0, state.hours));
+});
+
+el.openObservationButton.addEventListener("click", () => {
+  state.observation = null;
+  el.cleanlinessOptions.querySelectorAll("button").forEach((button) => {
+    button.classList.remove("active");
+  });
+  updateObservationPreview();
+  el.observationDialog.showModal();
+});
+
+el.closeObservationButton.addEventListener("click", () => {
+  el.observationDialog.close();
+});
+
+el.cleanlinessOptions.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-value]");
+  if (!button) return;
+  el.cleanlinessOptions.querySelectorAll("button").forEach((item) => item.classList.remove("active"));
+  button.classList.add("active");
+  state.observation = buildObservation({
+    value: button.dataset.value,
+    label: button.dataset.label,
+  });
+  updateObservationPreview();
+});
+
+el.sendTelegramButton.addEventListener("click", () => {
+  if (!state.observation) return;
+  const url = new URL("https://t.me/share/url");
+  url.searchParams.set("url", "https://posmo333.github.io/cesmeli-weather-sea-app/");
+  url.searchParams.set("text", observationText(state.observation));
+  window.open(url.toString(), "_blank", "noopener");
+});
+
+el.downloadObservationButton.addEventListener("click", () => {
+  if (!state.observation) return;
+  downloadObservation(state.observation);
 });
 
 refresh();
