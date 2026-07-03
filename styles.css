@@ -653,10 +653,11 @@ h1 {
   min-height: 108px;
   display: grid;
   align-content: center;
-  justify-items: start;
+  justify-items: center;
   border-radius: 22px;
   padding: 14px;
   background: rgba(255, 255, 255, 0.12);
+  text-align: center;
 }
 
 .wave-topline > div:first-child,
@@ -664,12 +665,13 @@ h1 {
   min-height: 108px;
   display: grid;
   align-content: center;
-  justify-items: start;
-  place-items: initial;
+  justify-items: center;
+  place-items: center;
   border-radius: 22px;
   padding: 14px;
   background: rgba(255, 255, 255, 0.12);
   box-shadow: none;
+  text-align: center;
 }
 
 .wave-topline > div:first-child::before,
@@ -682,7 +684,7 @@ h1 {
 }
 
 .wave-topline > div:first-child::before {
-  content: "Индекс волн";
+  content: "Волны";
 }
 
 .air-topline > div:first-child::before {
@@ -690,9 +692,7 @@ h1 {
 }
 
 .wave-topline > div:first-child small,
-.air-topline > div:first-child small,
-.wave-metrics div:last-child strong,
-.wave-metrics div:last-child small {
+.air-topline > div:first-child small {
   display: none;
 }
 

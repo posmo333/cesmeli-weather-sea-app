@@ -1,6 +1,6 @@
 const PLACE = {
   name: "Чешмели",
-  version: "4.5 beta",
+  version: "4.9",
   latitude: 36.677778,
   longitude: 34.438611,
   shoreFacingDegrees: 131,
@@ -91,7 +91,7 @@ const el = {
   cleanlinessOptions: document.querySelector("#cleanlinessOptions"),
   observationPreview: document.querySelector("#observationPreview"),
   sendTelegramButton: document.querySelector("#sendTelegramButton"),
-  downloadObservationButton: document.querySelector("#downloadObservationButton"),
+  copyObservationButton: document.querySelector("#copyObservationButton"),
 };
 
 function degreesToCompass(deg) {
@@ -200,12 +200,12 @@ function waveHeightLabel(height) {
 
 function childWaveLabel(height, windSpeed) {
   if (height >= 1.1 || windSpeed >= 26) {
-    return { text: "", className: "high", color: "#ff8b72" };
+    return { text: "Не купаться", note: "опасно", className: "high", color: "#ff8b72" };
   }
   if (height >= 0.65 || windSpeed >= 18) {
-    return { text: "", className: "medium", color: "#ffd45a" };
+    return { text: "С присмотром", note: "у кромки", className: "medium", color: "#ffd45a" };
   }
-  return { text: "", className: "low", color: "#62e39a" };
+  return { text: "Безопасно", note: "купание", className: "low", color: "#62e39a" };
 }
 
 function bodyboardProfile(item) {
@@ -663,19 +663,13 @@ function formatAxisHour(time) {
   }).format(new Date(time));
 }
 
-function formatFileDate(date = new Date()) {
-  return new Intl.DateTimeFormat("sv-SE", {
-    timeZone: PLACE.timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  })
-    .format(date)
-    .replace(" ", "-")
-    .replaceAll(":", "");
+function getCurrentForecastItem(items) {
+  const nowMs = Date.now();
+  return items.reduce((closest, item) => {
+    const closestDelta = Math.abs(new Date(closest.time).getTime() - nowMs);
+    const itemDelta = Math.abs(new Date(item.time).getTime() - nowMs);
+    return itemDelta < closestDelta ? item : closest;
+  }, items[0]);
 }
 
 function buildObservation(cleanliness) {
@@ -765,32 +759,20 @@ function updateObservationPreview() {
   if (!observation) {
     el.observationPreview.textContent = "Выберите оценку, и приложение подготовит запись для отправки.";
     el.sendTelegramButton.disabled = true;
-    el.downloadObservationButton.disabled = true;
+    el.copyObservationButton.disabled = true;
+    el.copyObservationButton.textContent = "Скопировать";
     return;
   }
 
   el.observationPreview.textContent = observationText(observation);
   el.sendTelegramButton.disabled = false;
-  el.downloadObservationButton.disabled = false;
-}
-
-function downloadObservation(observation) {
-  const blob = new Blob([JSON.stringify(observation, null, 2)], {
-    type: "application/json;charset=utf-8",
-  });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `cesmeli-observation-${formatFileDate(new Date(observation.sentAt))}.json`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+  el.copyObservationButton.disabled = false;
+  el.copyObservationButton.textContent = "Скопировать";
 }
 
 function renderForecast() {
   const visible = state.forecast.slice(0, state.hours);
-  const now = visible[0];
+  const now = getCurrentForecastItem(visible);
   applyTimeTheme(new Date(now.time));
   const currentRisk = now.risk.score;
   const peak = visible.reduce((max, item) => (item.risk.score > max.risk.score ? item : max), now);
@@ -872,7 +854,7 @@ function renderForecast() {
     ["Высота", `${now.waveHeight.toFixed(1)} м`, wave.height.text, wave.height.color],
     ["Период", `${now.wavePeriod.toFixed(0)} с`, now.wavePeriod >= 6 ? "энергичнее" : "короткий", "#70c7ff"],
     ["Направление", degreesToCompass(now.waveDirection), "откуда волна", "#69f0e3"],
-    ["Дети", "", "", wave.child.color],
+    ["Дети", wave.child.text, wave.child.note, wave.child.color],
   ]
     .map(
       ([name, value, note, color]) => `
@@ -1068,9 +1050,18 @@ el.sendTelegramButton.addEventListener("click", () => {
   window.open(url.toString(), "_blank", "noopener");
 });
 
-el.downloadObservationButton.addEventListener("click", () => {
+el.copyObservationButton.addEventListener("click", async () => {
   if (!state.observation) return;
-  downloadObservation(state.observation);
+  const text = observationText(state.observation);
+  try {
+    await navigator.clipboard.writeText(text);
+    el.copyObservationButton.textContent = "Скопировано";
+    setTimeout(() => {
+      if (state.observation) el.copyObservationButton.textContent = "Скопировать";
+    }, 1400);
+  } catch (error) {
+    el.observationPreview.textContent = `${text}\n\nЕсли копирование не сработало, выделите этот текст вручную.`;
+  }
 });
 
 refresh();
