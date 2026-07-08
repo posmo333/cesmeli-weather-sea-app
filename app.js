@@ -1,6 +1,6 @@
 const PLACE = {
   name: "Чешмели",
-  version: "5.1.1",
+  version: "5.5",
   latitude: 36.677778,
   longitude: 34.438611,
   shoreFacingDegrees: 131,
@@ -381,23 +381,29 @@ function calculateRisk(item) {
   const driftSpeed = Math.hypot(driftNorth, driftEast);
   const onshoreDrift = projectionOnDirection(driftVector, PLACE.onshoreDirection);
   const alongshoreSpeed = Math.sqrt(Math.max(0, driftSpeed ** 2 - onshoreDrift ** 2));
-  const onshoreTransport = clamp((onshoreDrift + 0.04) / 0.36, 0, 1);
+  const onshoreTransport = clamp((onshoreDrift - 0.01) / 0.34, 0, 1);
   const alongshoreTrapping = clamp((alongshoreSpeed - Math.abs(onshoreDrift)) / 0.28, 0, 1);
   const energeticBeach = clamp(item.waveHeight / 1.4, 0, 1);
+  const wavePush = energeticBeach * shoreWave;
   const rainPower = clamp(item.rainProbability / 80, 0, 1);
   const runoffPower = item.runoff?.score ?? 0;
   const regionalRainPower = item.regionalRain?.score ?? 0;
   const calmRetention = item.waveHeight < 0.35 && driftSpeed < 0.12 ? 1 : 0;
+  const nearshoreDelivery = clamp(onshoreTransport * 0.72 + wavePush * 0.18 + alongshoreTrapping * 0.1, 0, 1);
+  const sourceSignal = clamp(
+    0.08 + rainPower * 0.14 + runoffPower * 0.46 + regionalRainPower * 0.26 + calmRetention * 0.06,
+    0,
+    1
+  );
+  const sourceDeliveredToBeach = sourceSignal * nearshoreDelivery;
 
   const score = Math.round(
-    10 +
-      onshoreTransport * 45 +
-      energeticBeach * shoreWave * 16 +
-      rainPower * 7 +
-      runoffPower * 16 +
-      regionalRainPower * 14 +
-      calmRetention * 8 +
-      alongshoreTrapping * 7
+    6 +
+      nearshoreDelivery * 14 +
+      sourceSignal * 14 +
+      sourceDeliveredToBeach * 60 +
+      wavePush * 4 +
+      alongshoreTrapping * 3
   );
 
   const factors = [
@@ -424,7 +430,9 @@ function calculateRisk(item) {
           : `${item.runoff.label}, ${item.runoff.source}`,
       detail:
         item.runoff?.score > 0.16
-          ? `дождь выше по руслу мог прийти к морю с задержкой`
+          ? nearshoreDelivery > 0.46
+            ? "сток есть, и дрейф может донести его к пляжу"
+            : "сток есть, но без прижима к пляжу он не завышает индекс"
           : "в верховьях ручьёв нет заметного дождевого сигнала",
     },
     {
@@ -435,23 +443,25 @@ function calculateRisk(item) {
           : `${item.regionalRain.label}, ${Math.round((item.regionalRain.coverage ?? 0) * 100)}% зоны`,
       detail:
         item.regionalRain?.score > 0.16
-          ? "широкий дождь по горам повышает общий смыв сегодня и завтра"
+          ? nearshoreDelivery > 0.46
+            ? "широкий дождь создаёт источник, а дрейф помогает доставке к берегу"
+            : "широкий дождь создаёт фон, но без прижима это не факт мусора у берега"
           : "нет широкого дождевого фронта по горной зоне",
     },
     {
       name: "Дрейф",
       value: `${onshoreDrift >= 0 ? "к берегу" : "от берега"} ${Math.abs(onshoreDrift).toFixed(2)} м/с`,
       detail:
-        runoffPower > 0.28 || regionalRainPower > 0.28
-          ? "дождевой смыв усиливает источник мусора"
-          : "сумма течения, ветра и волны",
+        nearshoreDelivery > 0.5
+          ? "доставка к пляжу учитывается вместе с источником мусора"
+          : "источник без доставки к пляжу теперь не завышает риск",
     },
   ];
 
   return {
     score: clamp(score, 0, 100),
     factors,
-    drift: { north: driftNorth, east: driftEast, speed: driftSpeed, onshore: onshoreDrift },
+    drift: { north: driftNorth, east: driftEast, speed: driftSpeed, onshore: onshoreDrift, delivery: nearshoreDelivery },
   };
 }
 
