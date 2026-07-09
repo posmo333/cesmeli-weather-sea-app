@@ -1,6 +1,6 @@
 const PLACE = {
   name: "Чешмели",
-  version: "5.5",
+  version: "5.6",
   latitude: 36.677778,
   longitude: 34.438611,
   shoreFacingDegrees: 131,
@@ -390,27 +390,49 @@ function calculateRisk(item) {
   const regionalRainPower = item.regionalRain?.score ?? 0;
   const calmRetention = item.waveHeight < 0.35 && driftSpeed < 0.12 ? 1 : 0;
   const nearshoreDelivery = clamp(onshoreTransport * 0.72 + wavePush * 0.18 + alongshoreTrapping * 0.1, 0, 1);
+  const directOnshoreWind = onshoreWind ** 2 * clamp((item.windSpeed - 3) / 9, 0, 1);
+  const surfLineConcentration =
+    clamp((item.waveHeight - 0.28) / 0.45, 0, 1) *
+    clamp((6.5 - item.wavePeriod) / 3.5, 0, 1) *
+    nearshoreDelivery;
+  const coastalAccumulation =
+    clamp((onshoreWind - 0.62) / 0.34, 0, 1) *
+    clamp((item.windSpeed - 4) / 7, 0, 1) *
+    clamp((item.waveHeight - 0.32) / 0.28, 0, 1);
+  const marineBackgroundSource = clamp(
+    directOnshoreWind * 0.52 + surfLineConcentration * 0.22 + onshoreCurrent * 0.08 + coastalAccumulation * 0.38,
+    0,
+    1
+  );
   const sourceSignal = clamp(
-    0.08 + rainPower * 0.14 + runoffPower * 0.46 + regionalRainPower * 0.26 + calmRetention * 0.06,
+    0.055 + rainPower * 0.11 + runoffPower * 0.38 + regionalRainPower * 0.2 + marineBackgroundSource * 0.48 + calmRetention * 0.04,
     0,
     1
   );
   const sourceDeliveredToBeach = sourceSignal * nearshoreDelivery;
+  const drySourceDelivered = marineBackgroundSource * nearshoreDelivery;
 
   const score = Math.round(
     6 +
-      nearshoreDelivery * 14 +
-      sourceSignal * 14 +
-      sourceDeliveredToBeach * 60 +
-      wavePush * 4 +
-      alongshoreTrapping * 3
+      nearshoreDelivery * 10 +
+      sourceSignal * 11 +
+      sourceDeliveredToBeach * 54 +
+      wavePush * 3 +
+      alongshoreTrapping * 2 +
+      drySourceDelivered * 40 +
+      coastalAccumulation * nearshoreDelivery * 32
   );
 
   const factors = [
     {
       name: "Ветер",
       value: `${Math.round(item.windSpeed)} км/ч, ${degreesToCompass(item.windDirection)}`,
-      detail: onshoreWind > 0.55 ? "ветровой снос направлен к берегу" : "ветровой снос не главный фактор",
+      detail:
+        coastalAccumulation > 0.22
+          ? "почти прямой прижим может собрать пену и мелкий мусор у кромки"
+          : onshoreWind > 0.55
+            ? "ветровой снос направлен к берегу"
+            : "ветровой снос не главный фактор",
     },
     {
       name: "Течение",
@@ -447,6 +469,19 @@ function calculateRisk(item) {
             ? "широкий дождь создаёт источник, а дрейф помогает доставке к берегу"
             : "широкий дождь создаёт фон, но без прижима это не факт мусора у берега"
           : "нет широкого дождевого фронта по горной зоне",
+    },
+    {
+      name: "Сухой источник",
+      value:
+        marineBackgroundSource > 0.5
+          ? "заметный"
+          : marineBackgroundSource > 0.28
+            ? "слабый"
+            : "низкий",
+      detail:
+        coastalAccumulation > 0.22
+          ? "модель учитывает фоновый плавающий мусор даже без дождя"
+          : "без дождя источник считается слабым, если нет прямого прижима",
     },
     {
       name: "Дрейф",
